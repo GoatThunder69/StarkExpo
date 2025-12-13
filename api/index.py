@@ -3,21 +3,22 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-SOURCE_API = "https://rc-info-ng.vercel.app/"
+API_A = "https://rc-info-ng.vercel.app/"
+API_B = "https://anuj-rcc.vercel.app/rc"
 OWNER_NAME = "@GoatThunder"
 
 REMOVE_KEYS = {"owner", "Owner", "credit", "Credit", "by", "By", "username", "Username"}
 
-def remove_external_owner(data):
-    if isinstance(data, dict):
+def remove_external_owner(obj):
+    if isinstance(obj, dict):
         return {
             k: remove_external_owner(v)
-            for k, v in data.items()
+            for k, v in obj.items()
             if k not in REMOVE_KEYS
         }
-    if isinstance(data, list):
-        return [remove_external_owner(i) for i in data]
-    return data
+    if isinstance(obj, list):
+        return [remove_external_owner(i) for i in obj]
+    return obj
 
 
 @app.route("/api")
@@ -31,30 +32,29 @@ def proxy_api():
         })
 
     try:
-        r = requests.get(
-            SOURCE_API,
-            params={"rc": veh},
-            timeout=20
-        )
+        # ---- API A ----
+        r_a = requests.get(API_A, params={"rc": veh}, timeout=20)
+        data_a = r_a.json() if r_a.status_code == 200 else {}
 
-        if r.status_code != 200:
-            return jsonify({
-                "status": False,
-                "message": "Source API error",
-                "Owner": OWNER_NAME
-            })
+        # ---- API B ----
+        r_b = requests.get(API_B, params={"query": veh}, timeout=20)
+        data_b = r_b.json() if r_b.status_code == 200 else {}
 
-        raw_data = r.json()
-
-        # remove only external owner/credit keys
-        raw_data = remove_external_owner(raw_data)
+        # remove only external owner/credit keys (RAW otherwise)
+        data_a = remove_external_owner(data_a)
+        data_b = remove_external_owner(data_b)
 
         return jsonify({
             "status": True,
             "vehicle": veh.upper(),
 
-            "🚗 RC DETAILS 🚗": "",
-            **raw_data,
+            "🚗 RC DETAILS (rc-info-ng) 🚗": "",
+            **data_a,
+
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━": "",
+
+            "🚘 RC DETAILS (anuj-rcc) 🚘": "",
+            **data_b,
 
             "Owner": OWNER_NAME
         })
@@ -70,8 +70,8 @@ def proxy_api():
 @app.route("/")
 def home():
     return jsonify({
-        "message": "Single Source RC API Running",
+        "message": "Dual Source RC API Running",
         "usage": "/api?veh=HR26CJ1818",
-        "note": "Raw data from source, nothing removed except external owner/credit",
+        "note": "Both APIs RAW data, nulls preserved, emoji sections, owner overridden",
         "Owner": OWNER_NAME
     })
