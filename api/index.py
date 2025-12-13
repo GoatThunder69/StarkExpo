@@ -73,7 +73,7 @@ def home():
         "message": "Vehicle API is running",
         "usage": {
             "/api": "/api?veh=GJ01AB1234",
-            "/verify": "/verify?veh=GJ01AB1234"
+            "/verify": "/verify"
         },
         "credit": "Made By: @Sxthunder"
     })
@@ -92,6 +92,6 @@ def verify():
         "credit": "Made By: @Sxthunder"
     })
 
-# ================= VERCEL HANDLER =================
-def handler(request, *args, **kwargs):
-    return app(request, *args, **kwargs)
+# ⚠️ IMPORTANT:
+# ❌ NO handler() function
+# ✅ Vercel will automatically use `app` as WSGI callable
