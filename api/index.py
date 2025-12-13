@@ -1,77 +1,94 @@
+import time
 import requests
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-API_A = "https://rc-info-ng.vercel.app/"
-API_B = "https://anuj-rcc.vercel.app/rc"
-OWNER_NAME = "@GoatThunder"
+SOURCE_API = "https://anuj-rcc.vercel.app/rc"
+OWNER = "@GoatThunder"
+
+# ---- RATE LIMIT CONFIG ----
+RATE_LIMIT_SECONDS = 10
+ip_last_request = {}
 
 REMOVE_KEYS = {"owner", "Owner", "credit", "Credit", "by", "By", "username", "Username"}
 
-def remove_external_owner(obj):
+def clean_owner(obj):
     if isinstance(obj, dict):
         return {
-            k: remove_external_owner(v)
+            k: clean_owner(v)
             for k, v in obj.items()
             if k not in REMOVE_KEYS
         }
     if isinstance(obj, list):
-        return [remove_external_owner(i) for i in obj]
+        return [clean_owner(i) for i in obj]
     return obj
 
 
-@app.route("/api")
-def proxy_api():
+def is_rate_limited(ip):
+    now = time.time()
+    last = ip_last_request.get(ip)
+    if last and now - last < RATE_LIMIT_SECONDS:
+        return True, RATE_LIMIT_SECONDS - int(now - last)
+    ip_last_request[ip] = now
+    return False, 0
+
+
+@app.route("/api", methods=["GET"])
+def rc_api():
+    ip = request.headers.get("x-forwarded-for", request.remote_addr)
+
+    limited, wait = is_rate_limited(ip)
+    if limited:
+        return jsonify({
+            "status": False,
+            "message": f"Rate limit exceeded. Try again after {wait} seconds",
+            "Owner": OWNER
+        }), 429
+
     veh = request.args.get("veh")
     if not veh:
         return jsonify({
             "status": False,
-            "error": "Use ?veh=HR26CJ1818",
-            "Owner": OWNER_NAME
+            "error": "Use ?veh=UP32JM0855",
+            "Owner": OWNER
         })
 
     try:
-        # ---- API A ----
-        r_a = requests.get(API_A, params={"rc": veh}, timeout=20)
-        data_a = r_a.json() if r_a.status_code == 200 else {}
+        r = requests.get(SOURCE_API, params={"query": veh}, timeout=20)
+        data = r.json() if r.status_code == 200 else {}
 
-        # ---- API B ----
-        r_b = requests.get(API_B, params={"query": veh}, timeout=20)
-        data_b = r_b.json() if r_b.status_code == 200 else {}
-
-        # remove only external owner/credit keys (RAW otherwise)
-        data_a = remove_external_owner(data_a)
-        data_b = remove_external_owner(data_b)
+        data = clean_owner(data)
 
         return jsonify({
-            "status": True,
-            "vehicle": veh.upper(),
-
-            "🚗 RC DETAILS (rc-info-ng) 🚗": "",
-            **data_a,
-
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━": "",
-
-            "🚘 RC DETAILS (anuj-rcc) 🚘": "",
-            **data_b,
-
-            "Owner": OWNER_NAME
+            "🔍 Query": veh,
+            "📄 RC INFO": data,
+            "Owner": OWNER
         })
 
     except Exception as e:
         return jsonify({
             "status": False,
             "error": str(e),
-            "Owner": OWNER_NAME
+            "Owner": OWNER
         })
+
+
+# ---- BLOCK ALL OTHER METHODS ----
+@app.route("/api", methods=["POST", "PUT", "PATCH", "DELETE"])
+def block_methods():
+    return jsonify({
+        "status": False,
+        "error": "Read-only API. Modification not allowed.",
+        "Owner": OWNER
+    }), 403
 
 
 @app.route("/")
 def home():
     return jsonify({
-        "message": "Dual Source RC API Running",
-        "usage": "/api?veh=HR26CJ1818",
-        "note": "Both APIs RAW data, nulls preserved, emoji sections, owner overridden",
-        "Owner": OWNER_NAME
+        "message": "RC Emoji API Running (Read-Only + Rate Limited)",
+        "rate_limit": "1 request / 10 seconds / IP",
+        "usage": "/api?veh=UP32JM0855",
+        "Owner": OWNER
     })
