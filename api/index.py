@@ -1,9 +1,6 @@
 import requests
 import re
 from bs4 import BeautifulSoup
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -22,55 +19,86 @@ def get_vehicle_info(vehicle_number: str) -> dict | None:
             return None
 
         soup = BeautifulSoup(response.text, 'html.parser')
-        data = {"vehicle_number": vehicle_number}
+        data = {'vehicle_number': vehicle_number}
 
         cards = soup.find_all('div', class_=re.compile('card'))
         for card in cards:
             text = card.get_text(strip=True, separator=' | ')
 
-            if 'Owner Name' in text and 'Ownership' not in text:
-                m = re.search(r'Owner Name \| ([^|]+)', text)
-                if m:
-                    data['owner_name'] = m.group(1).strip()
-
+            # Model
             if 'Modal Name' in text or 'Model Name' in text:
-                m = re.search(r'(?:Modal Name|Model Name) \| ([^|]+)', text)
-                if m:
-                    data['model'] = m.group(1).strip()
+                parts = text.split(' | ')
+                if parts:
+                    data['model'] = parts[0]
 
-            if 'Fuel Type' in text:
-                m = re.search(r'Fuel Type \| ([^|]+)', text)
-                if m:
-                    data['fuel_type'] = m.group(1).strip()
+            # Owner Name
+            if 'Owner Name' in text and 'Ownership' not in text:
+                parts = text.split(' | ')
+                if parts and parts[0] != 'Owner Name':
+                    data['owner_name'] = parts[0]
 
-            if 'Vehicle Class' in text:
-                m = re.search(r'Vehicle Class \| ([^|]+)', text)
-                if m:
-                    data['vehicle_class'] = m.group(1).strip()
-
-            if 'Chassis Number' in text:
-                m = re.search(r'Chassis Number \| ([^|]+)', text)
-                if m:
-                    data['chassis'] = m.group(1).strip()
-
-            if 'Engine Number' in text:
-                m = re.search(r'Engine Number \| ([^|]+)', text)
-                if m:
-                    data['engine'] = m.group(1).strip()
-
-            if 'Registration Date' in text:
-                m = re.search(r'Registration Date \| ([^|]+)', text)
-                if m:
-                    data['registration_date'] = m.group(1).strip()
-
-            if 'Registered RTO' in text:
-                m = re.search(r'Registered RTO \| ([^|]+)', text)
-                if m:
-                    data['rto'] = m.group(1).strip()
-
+            # RTO Code
             rto_match = re.search(r'([A-Z]{2}-\d{1,2})', text)
-            if rto_match:
+            if rto_match and 'Code' in text:
                 data['rto_code'] = rto_match.group(1)
+
+            # City
+            if 'City Name' in text:
+                parts = text.split(' | ')
+                if parts and parts[0] != 'City Name':
+                    data['city'] = parts[0]
+
+            # Ownership Details
+            if 'Ownership Details' in text:
+                fields = [
+                    ("Father's Name", 'father_name'),
+                    ('Owner Serial No', 'owner_sr'),
+                    ('Registration Number', 'reg_no'),
+                    ('Registered RTO', 'rto')
+                ]
+                for field, key in fields:
+                    match = re.search(rf"{field} \| ([^|]+)", text)
+                    if match:
+                        data[key] = match.group(1).strip()
+
+            # Vehicle Details
+            if 'Vehicle Details' in text:
+                fields = [
+                    ('Model Name', 'maker'),
+                    ('Maker Model', 'model'),
+                    ('Vehicle Class', 'vehicle_class'),
+                    ('Fuel Type', 'fuel_type'),
+                    ('Chassis Number', 'chassis'),
+                    ('Engine Number', 'engine')
+                ]
+                for field, key in fields:
+                    match = re.search(rf"{field} \| ([^|]+)", text)
+                    if match:
+                        data[key] = match.group(1).strip()
+
+            # Important Dates
+            if 'Important Dates' in text:
+                fields = [
+                    ('Registration Date', 'reg_date'),
+                    ('Vehicle Age', 'age'),
+                    ('Fitness Upto', 'fitness_upto')
+                ]
+                for field, key in fields:
+                    match = re.search(rf"{field} \| ([^|]+)", text)
+                    if match:
+                        data[key] = match.group(1).strip()
+
+            # Other Info
+            if 'Other Information' in text:
+                fields = [
+                    ('Financer Name', 'financer'),
+                    ('Cubic Capacity', 'cc'),
+                    ('Seating Capacity', 'seats')
+                ]
+                for field, key in fields:
+                    match = re.search(rf"{field} \| ([^|]+)", text)
+                    if match:
+                        data[key] = match.group(1).strip()
 
         return data if len(data) > 1 else None
 
@@ -79,12 +107,12 @@ def get_vehicle_info(vehicle_number: str) -> dict | None:
 
 
 # ================= CHALLAN INFO =================
-def get_challan_info(vehicle_number: str) -> dict:
+def get_challan_info(vehicle_number: str) -> dict | None:
     try:
         url = f'https://vahanx.in/challan-search/{vehicle_number}'
         response = requests.get(url, headers=HEADERS, timeout=15)
         if response.status_code != 200:
-            return {"total": 0, "challans": []}
+            return None
 
         soup = BeautifulSoup(response.text, 'html.parser')
         challans = []
@@ -100,13 +128,14 @@ def get_challan_info(vehicle_number: str) -> dict:
                 ('Amount', 'amount'),
                 ('Status', 'status'),
                 ('Offence', 'offence'),
-                ('Location', 'location')
+                ('Location', 'location'),
+                ('Vehicle No', 'vehicle_no')
             ]
 
             for field, key in fields:
-                m = re.search(rf"{field} \| ([^|]+)", text)
-                if m:
-                    challan[key] = m.group(1).strip()
+                match = re.search(rf"{field} \| ([^|]+)", text)
+                if match:
+                    challan[key] = match.group(1).strip()
 
             if challan:
                 challans.append(challan)
@@ -114,40 +143,27 @@ def get_challan_info(vehicle_number: str) -> dict:
         return {
             "total": len(challans),
             "challans": challans
+        } if challans else {
+            "total": 0,
+            "challans": []
         }
 
     except Exception:
-        return {"total": 0, "challans": []}
+        return None
 
 
-# ================= API ROUTE =================
-@app.route("/api")
-def api():
-    vehicle_number = request.args.get("veh")
-    if not vehicle_number:
-        return jsonify({"error": "Use ?veh=RJ09UF0001"})
+# ================= COMBINED RESULT =================
+def get_vehicle_full(vehicle_number: str) -> dict:
+    vehicle = get_vehicle_info(vehicle_number)
+    challan = get_challan_info(vehicle_number)
 
-    vehicle = get_vehicle_info(vehicle_number.upper())
-    challan = get_challan_info(vehicle_number.upper())
-
-    return jsonify({
+    return {
         "status": True,
-        "vehicle_number": vehicle_number.upper(),
+        "vehicle_number": vehicle_number,
         "vehicle_details": vehicle or "Not Available",
-        "challan_details": challan,
+        "challan_details": challan or {
+            "total": 0,
+            "challans": []
+        },
         "credit": "Made By: @Sxthunder"
-    })
-
-
-# ================= VERIFY MODULE =================
-@app.route("/verify")
-def verify():
-    return jsonify({
-        "Mobile Number": "Not Added In This Module.",
-        "credit": "Made By: @Sxthunder"
-    })
-
-
-# ================= RUN =================
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    }
