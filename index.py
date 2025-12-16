@@ -4,7 +4,7 @@ import requests
 # ---------------- BASIC APP ----------------
 app = Flask(__name__)
 
-OWNER = "@GoatThunder"
+OWNER = "-"
 
 # ---------------- HEALTH CHECK ----------------
 @app.route("/health")
