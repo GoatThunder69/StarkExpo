@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StarkSpace OSINT | Private Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon-blue: #00f2ff; --neon-red: #ff0033; }
+        body {
+            margin: 0; background: #00050a; color: var(--neon-blue);
+            font-family: 'JetBrains Mono', monospace; overflow-x: hidden;
+        }
+        #particles-js { position: fixed; width: 100%; height: 100%; z-index: -1; }
+
+        /* Smooth 90FPS Feel */
+        .glass-card {
+            background: rgba(0, 15, 30, 0.8); backdrop-filter: blur(15px);
+            border: 1px solid var(--neon-blue); border-radius: 10px;
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.1); transition: 0.3s ease;
+        }
+        .glass-card:hover { box-shadow: 0 0 40px rgba(0, 242, 255, 0.25); }
+
+        /* Top Broadcast */
+        .broadcast-bar {
+            background: linear-gradient(90deg, #660000, #ff0000, #660000);
+            color: white; padding: 6px 0; font-size: 13px; font-weight: bold;
+            text-transform: uppercase; border-bottom: 2px solid var(--neon-red);
+            overflow: hidden; white-space: nowrap; box-shadow: 0 0 20px #ff0000;
+        }
+        .scrolling-text { display: inline-block; animation: scrollText 18s linear infinite; }
+        @keyframes scrollText { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        /* Neon Button */
+        .btn-execute {
+            background: transparent; border: 1px solid var(--neon-blue);
+            color: var(--neon-blue); font-family: 'Orbitron', sans-serif;
+            transition: 0.4s; position: relative; overflow: hidden;
+        }
+        .btn-execute:hover {
+            background: var(--neon-blue); color: #000; font-weight: bold;
+            box-shadow: 0 0 30px var(--neon-blue); transform: scale(1.02);
+        }
+
+        /* Results JSON Styling */
+        .json-key { color: #ff00c8; }
+        .json-val { color: #fff; }
+        pre { scrollbar-width: thin; scrollbar-color: var(--neon-blue) transparent; }
+    </style>
+</head>
+<body>
+
+<div class="broadcast-bar">
+    <div class="scrolling-text">
+        [NOTIFICATION] JOIN OFFICIAL GROUP @StarkSpaceIn FOR FREE SEARCHES & LATEST OSINT TOOLS | OWNER: @Sxthunder | SYSTEM STATUS: 90FPS STABLE ONLINE
+    </div>
+</div>
+
+<div id="particles-js"></div>
+
+<div id="popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+    <div class="glass-card p-10 text-center max-w-sm border-2 border-red-600 animate-pulse">
+        <h2 class="text-3xl font-bold text-red-500 mb-4 tracking-tighter italic">RESTRICTED AREA</h2>
+        <p class="text-sm text-gray-400 mb-6 font-sans">Access to StarkSpace requires community membership. Updates are posted in the channel.</p>
+        <div class="flex flex-col gap-4">
+            <a href="https://t.me/StarkSpaceIn" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-black tracking-widest">JOIN @StarkSpaceIn</a>
+            <button onclick="closePopup()" class="text-xs text-gray-500 hover:text-white underline">PROCEED TO TERMINAL</button>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-6">
+    <header class="text-center mb-10">
+        <h1 class="text-5xl font-bold tracking-widest italic" style="font-family: 'Orbitron'; text-shadow: 0 0 15px var(--neon-blue);">StarkSpace</h1>
+        <p class="text-xs text-blue-400 mt-2 tracking-[0.5em]">SYSTEM OWNER: @Sxthunder</p>
+    </header>
+
+    <div class="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div class="glass-card p-8">
+            <div class="flex items-center mb-6">
+                <div class="w-2 h-2 bg-blue-400 rounded-full mr-2 shadow-lg shadow-blue-400 animate-ping"></div>
+                <h3 class="text-lg font-bold">QUERY BUILDER</h3>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="text-[10px] text-gray-400 block mb-2 uppercase tracking-widest">Select Database</label>
+                    <select id="apiType" class="w-full p-4 rounded bg-black/50 border border-blue-900 outline-none focus:border-cyan-400 transition-all cursor-pointer">
+                        <option value="mobile">MOBILE INFORMATION</option>
+                        <option value="aadhaar">AADHAAR VERIFICATION</option>
+                        <option value="vehicle">VEHICLE (RC) LOOKUP</option>
+                        <option value="rashan">RATION CARD INDEX</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label id="inputLabel" class="text-[10px] text-gray-400 block mb-2 uppercase tracking-widest">Input Parameter</label>
+                    <input type="text" id="userInput" placeholder="Waiting for input..." class="w-full p-4 rounded bg-black/50 border border-blue-900 outline-none focus:border-cyan-400 transition-all">
+                </div>
+
+                <button onclick="executeApi()" class="w-full btn-execute py-4 rounded font-bold uppercase tracking-widest">
+                    Run Scan
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-card p-8 flex flex-col">
+            <div class="flex items-center mb-4">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 shadow-lg shadow-green-500"></div>
+                <h3 class="text-lg font-bold uppercase">Console Result</h3>
+            </div>
+            <div id="terminal" class="bg-black/40 p-5 rounded h-80 overflow-y-auto border border-blue-950 font-mono text-sm">
+                <span class="text-gray-600 font-sans italic">// StarkSpace OSINT v2.0 Ready...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Particle JS Setup
+    particlesJS("particles-js", {
+        "particles": {
+            "number": { "value": 90 },
+            "color": { "value": "#00f2ff" },
+            "opacity": { "value": 0.3 },
+            "size": { "value": 2 },
+            "line_linked": { "enable": true, "distance": 150, "color": "#00f2ff", "opacity": 0.2 },
+            "move": { "enable": true, "speed": 1.5 }
+        }
+    });
+
+    function closePopup() {
+        const p = document.getElementById('popup');
+        p.style.opacity = '0';
+        setTimeout(() => p.style.display = 'none', 500);
+    }
+
+    async function executeApi() {
+        const type = document.getElementById('apiType').value;
+        const input = document.getElementById('userInput').value;
+        const terminal = document.getElementById('terminal');
+
+        if (!input) {
+            terminal.innerHTML = `<span class="text-red-500">[!] ERROR: Input parameter missing.</span>`;
+            return;
+        }
+
+        // Show Loading
+        terminal.innerHTML = `<span class="text-yellow-500 animate-pulse">[PROCESSING] Querying ${type.toUpperCase()} database...</span>`;
+
+        // API Mapping
+        const API_URLS = {
+            mobile: `https://api.b77bf911.workers.dev/mobile?number=${input}`,
+            aadhaar: `https://api.b77bf911.workers.dev/aadhaar?id=${input}`,
+            vehicle: `https://api.b77bf911.workers.dev/vehicle?registration=${input}`,
+            rashan: `https://api.b77bf911.workers.dev/rashan?aadhaar=${input}`
+        };
+
+        try {
+            const response = await fetch(API_URLS[type]);
+            const data = await response.json();
+
+            // Success Output
+            terminal.innerHTML = `<span class="text-green-400">[DATA FOUND] Response from server:</span><br><br>`;
+            
+            // Nice Formatting
+            let formattedData = JSON.stringify(data, null, 4);
+            terminal.innerHTML += `<pre class="text-white">${formattedData}</pre>`;
+        } catch (error) {
+            terminal.innerHTML = `<span class="text-red-500">[FAILED] Error connecting to API server. Check if API is active.</span>`;
+        }
+        terminal.scrollTop = 0; // Auto scroll to top to see data
+    }
+</script>
+
+</body>
+</html>
