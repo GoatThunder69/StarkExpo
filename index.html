@@ -3,177 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StarkSpace OSINT | Private Terminal</title>
+    <title>StarkSpace OSINT | Login Required</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --neon-blue: #00f2ff; --neon-red: #ff0033; }
+        :root { --neon-blue: #00f2ff; --neon-red: #ff0033; --neon-green: #00ff41; }
         body {
             margin: 0; background: #00050a; color: var(--neon-blue);
-            font-family: 'JetBrains Mono', monospace; overflow-x: hidden;
+            font-family: 'JetBrains Mono', monospace; overflow: hidden;
         }
         #particles-js { position: fixed; width: 100%; height: 100%; z-index: -1; }
 
-        /* Smooth 90FPS Feel */
+        /* Glassmorphism Classes */
         .glass-card {
-            background: rgba(0, 15, 30, 0.8); backdrop-filter: blur(15px);
-            border: 1px solid var(--neon-blue); border-radius: 10px;
-            box-shadow: 0 0 25px rgba(0, 242, 255, 0.1); transition: 0.3s ease;
+            background: rgba(0, 15, 30, 0.9); backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
         }
-        .glass-card:hover { box-shadow: 0 0 40px rgba(0, 242, 255, 0.25); }
 
-        /* Top Broadcast */
+        /* Broadcast Alert */
         .broadcast-bar {
             background: linear-gradient(90deg, #660000, #ff0000, #660000);
-            color: white; padding: 6px 0; font-size: 13px; font-weight: bold;
-            text-transform: uppercase; border-bottom: 2px solid var(--neon-red);
-            overflow: hidden; white-space: nowrap; box-shadow: 0 0 20px #ff0000;
+            color: white; padding: 6px 0; font-size: 11px; font-weight: bold;
+            border-bottom: 2px solid var(--neon-red); overflow: hidden; white-space: nowrap;
         }
-        .scrolling-text { display: inline-block; animation: scrollText 18s linear infinite; }
+        .scrolling-text { display: inline-block; animation: scrollText 15s linear infinite; }
         @keyframes scrollText { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Neon Button */
-        .btn-execute {
-            background: transparent; border: 1px solid var(--neon-blue);
-            color: var(--neon-blue); font-family: 'Orbitron', sans-serif;
-            transition: 0.4s; position: relative; overflow: hidden;
-        }
-        .btn-execute:hover {
-            background: var(--neon-blue); color: #000; font-weight: bold;
-            box-shadow: 0 0 30px var(--neon-blue); transform: scale(1.02);
+        /* Login Container */
+        #login-screen {
+            position: fixed; inset: 0; z-index: 100; display: flex;
+            align-items: center; justify-content: center; background: #000814;
         }
 
-        /* Results JSON Styling */
-        .json-key { color: #ff00c8; }
-        .json-val { color: #fff; }
-        pre { scrollbar-width: thin; scrollbar-color: var(--neon-blue) transparent; }
+        .neon-input {
+            background: rgba(0,0,0,0.5); border: 1px solid #1a3a5a;
+            color: white; padding: 12px; width: 100%; border-radius: 5px; outline: none;
+        }
+        .neon-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+
+        .btn-glow {
+            background: transparent; border: 1px solid var(--neon-blue);
+            padding: 12px; font-family: 'Orbitron'; cursor: pointer; transition: 0.3s;
+        }
+        .btn-glow:hover { background: var(--neon-blue); color: black; box-shadow: 0 0 20px var(--neon-blue); }
+
+        /* Dashboard Hidden by Default */
+        #main-dashboard { display: none; overflow-y: auto; height: 100vh; }
     </style>
 </head>
 <body>
 
-<div class="broadcast-bar">
-    <div class="scrolling-text">
-        [NOTIFICATION] JOIN OFFICIAL GROUP @StarkSpaceIn FOR FREE SEARCHES & LATEST OSINT TOOLS | OWNER: @Sxthunder | SYSTEM STATUS: 90FPS STABLE ONLINE
-    </div>
-</div>
-
 <div id="particles-js"></div>
 
-<div id="popup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
-    <div class="glass-card p-10 text-center max-w-sm border-2 border-red-600 animate-pulse">
-        <h2 class="text-3xl font-bold text-red-500 mb-4 tracking-tighter italic">RESTRICTED AREA</h2>
-        <p class="text-sm text-gray-400 mb-6 font-sans">Access to StarkSpace requires community membership. Updates are posted in the channel.</p>
-        <div class="flex flex-col gap-4">
-            <a href="https://t.me/StarkSpaceIn" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-black tracking-widest">JOIN @StarkSpaceIn</a>
-            <button onclick="closePopup()" class="text-xs text-gray-500 hover:text-white underline">PROCEED TO TERMINAL</button>
-        </div>
+<div id="login-screen">
+    <div class="glass-card p-10 w-full max-w-md mx-4 border-t-4 border-cyan-500 text-center">
+        <h1 class="text-4xl font-bold mb-2 tracking-tighter" style="font-family: 'Orbitron'; text-shadow: 0 0 15px var(--neon-blue);">STARKSPACE</h1>
+        <p class="text-[10px] text-gray-500 tracking-[0.4em] mb-8">SECURE LOGIN REQUIRED</p>
+        
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+            <input type="email" id="email" placeholder="Enter Email" class="neon-input" required>
+            <input type="password" id="pass" placeholder="Enter Password" class="neon-input" required>
+            <button type="submit" class="w-full btn-glow uppercase tracking-widest font-bold">Initialize Session</button>
+        </form>
+        <p class="mt-6 text-[10px] text-gray-600 italic">Owner: @Sxthunder | Community: @StarkSpaceIn</p>
     </div>
 </div>
 
-<div class="container mx-auto px-4 py-6">
-    <header class="text-center mb-10">
-        <h1 class="text-5xl font-bold tracking-widest italic" style="font-family: 'Orbitron'; text-shadow: 0 0 15px var(--neon-blue);">StarkSpace</h1>
-        <p class="text-xs text-blue-400 mt-2 tracking-[0.5em]">SYSTEM OWNER: @Sxthunder</p>
-    </header>
+<div id="main-dashboard">
+    <div class="broadcast-bar">
+        <div class="scrolling-text uppercase">
+            ⚠️ SYSTEM LOGGED IN | JOIN @StarkSpaceIn FOR EXCLUSIVE ACCESS | OWNER: @Sxthunder | OSINT v3.0 ONLINE ⚠️
+        </div>
+    </div>
 
-    <div class="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-        <div class="glass-card p-8">
-            <div class="flex items-center mb-6">
-                <div class="w-2 h-2 bg-blue-400 rounded-full mr-2 shadow-lg shadow-blue-400 animate-ping"></div>
-                <h3 class="text-lg font-bold">QUERY BUILDER</h3>
-            </div>
-            
-            <div class="space-y-6">
-                <div>
-                    <label class="text-[10px] text-gray-400 block mb-2 uppercase tracking-widest">Select Database</label>
-                    <select id="apiType" class="w-full p-4 rounded bg-black/50 border border-blue-900 outline-none focus:border-cyan-400 transition-all cursor-pointer">
-                        <option value="mobile">MOBILE INFORMATION</option>
-                        <option value="aadhaar">AADHAAR VERIFICATION</option>
-                        <option value="vehicle">VEHICLE (RC) LOOKUP</option>
-                        <option value="rashan">RATION CARD INDEX</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label id="inputLabel" class="text-[10px] text-gray-400 block mb-2 uppercase tracking-widest">Input Parameter</label>
-                    <input type="text" id="userInput" placeholder="Waiting for input..." class="w-full p-4 rounded bg-black/50 border border-blue-900 outline-none focus:border-cyan-400 transition-all">
-                </div>
-
-                <button onclick="executeApi()" class="w-full btn-execute py-4 rounded font-bold uppercase tracking-widest">
-                    Run Scan
-                </button>
+    <div id="popup" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 hidden">
+        <div class="glass-card p-8 text-center max-w-sm border-2 border-cyan-500">
+            <h2 class="text-2xl font-bold text-white mb-2 italic" style="font-family: 'Orbitron'">JOIN COMMUNITY</h2>
+            <p class="text-xs text-gray-400 mb-6">Support the project by joining our official Telegram channel.</p>
+            <div class="flex flex-col gap-3">
+                <a href="https://t.me/StarkSpaceIn" target="_blank" class="bg-blue-600 py-3 rounded font-bold">JOIN @StarkSpaceIn</a>
+                <button onclick="closePopup()" class="text-[10px] text-gray-500 underline">CLOSE TERMINAL</button>
             </div>
         </div>
+    </div>
 
-        <div class="glass-card p-8 flex flex-col">
-            <div class="flex items-center mb-4">
-                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 shadow-lg shadow-green-500"></div>
-                <h3 class="text-lg font-bold uppercase">Console Result</h3>
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-10">
+            <h1 class="text-5xl font-black italic tracking-tighter" style="font-family: 'Orbitron'; text-shadow: 0 0 20px var(--neon-blue);">STARKSPACE</h1>
+            <p class="text-[10px] text-blue-400 tracking-[0.6em] uppercase mt-2">OSINT Engine Powered by @Sxthunder</p>
+        </header>
+
+        <div class="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <div class="glass-card p-6 border-l-4 border-cyan-500">
+                <h3 class="text-xs font-bold mb-6 flex items-center tracking-widest text-white">
+                    <span class="w-2 h-2 bg-cyan-500 rounded-full mr-3 animate-pulse"></span> SEARCH PARAMETERS
+                </h3>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="text-[10px] text-gray-500 block mb-1">SELECT MODULE</label>
+                        <select id="apiType" onchange="updatePlaceholder()" class="neon-input">
+                            <option value="mobile">Mobile Info</option>
+                            <option value="aadhaar">Aadhaar Data</option>
+                            <option value="gst">GST Information</option>
+                            <option value="telegram">Telegram ID Lookup</option>
+                            <option value="ifsc">IFSC Bank Search</option>
+                            <option value="rashan">Ration Card Data</option>
+                            <option value="vehicle">Vehicle (RC) Details</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] text-gray-500 block mb-1">TARGET INPUT</label>
+                        <input type="text" id="userInput" placeholder="Enter Mobile Number..." class="neon-input">
+                    </div>
+
+                    <button onclick="runQuery()" class="w-full btn-glow py-4 font-bold uppercase tracking-widest text-sm">Execute Extraction</button>
+                </div>
             </div>
-            <div id="terminal" class="bg-black/40 p-5 rounded h-80 overflow-y-auto border border-blue-950 font-mono text-sm">
-                <span class="text-gray-600 font-sans italic">// StarkSpace OSINT v2.0 Ready...</span>
+
+            <div class="glass-card p-6 flex flex-col border-l-4 border-green-500">
+                <h3 class="text-xs font-bold mb-4 flex items-center tracking-widest text-white">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span> OUTPUT LOGS
+                </h3>
+                <div id="terminal" class="bg-black/60 p-4 rounded h-[350px] overflow-y-auto font-mono text-xs border border-white/5">
+                    <div class="text-gray-600 italic">// StarkSpace Session Active...</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Particle JS Setup
+    // Initialize Particles
     particlesJS("particles-js", {
         "particles": {
-            "number": { "value": 90 },
+            "number": { "value": 80 },
             "color": { "value": "#00f2ff" },
-            "opacity": { "value": 0.3 },
-            "size": { "value": 2 },
-            "line_linked": { "enable": true, "distance": 150, "color": "#00f2ff", "opacity": 0.2 },
-            "move": { "enable": true, "speed": 1.5 }
+            "opacity": { "value": 0.2 },
+            "size": { "value": 1.5 },
+            "line_linked": { "enable": true, "distance": 150, "color": "#00f2ff", "opacity": 0.1 },
+            "move": { "enable": true, "speed": 2 }
         }
     });
 
-    function closePopup() {
-        const p = document.getElementById('popup');
-        p.style.opacity = '0';
-        setTimeout(() => p.style.display = 'none', 500);
+    // Login Function
+    function handleLogin(e) {
+        e.preventDefault();
+        const loginScreen = document.getElementById('login-screen');
+        const dashboard = document.getElementById('main-dashboard');
+        const popup = document.getElementById('popup');
+
+        // Simple Test Bypass
+        loginScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        document.body.style.overflow = 'auto'; // Re-enable scroll
+        
+        // Show Telegram Pop-up after login
+        setTimeout(() => {
+            popup.classList.remove('hidden');
+        }, 1000);
     }
 
-    async function executeApi() {
+    function closePopup() {
+        document.getElementById('popup').classList.add('hidden');
+    }
+
+    function updatePlaceholder() {
         const type = document.getElementById('apiType').value;
-        const input = document.getElementById('userInput').value;
+        const input = document.getElementById('userInput');
+        const holders = {
+            mobile: "Enter Mobile Number...",
+            aadhaar: "Enter Aadhaar ID...",
+            gst: "Enter GSTIN...",
+            telegram: "Enter Telegram UID...",
+            ifsc: "Enter IFSC Code...",
+            rashan: "Enter Aadhaar for Ration...",
+            vehicle: "Enter Registration Number..."
+        };
+        input.placeholder = holders[type];
+    }
+
+    async function runQuery() {
+        const type = document.getElementById('apiType').value;
+        const value = document.getElementById('userInput').value.trim();
         const terminal = document.getElementById('terminal');
 
-        if (!input) {
-            terminal.innerHTML = `<span class="text-red-500">[!] ERROR: Input parameter missing.</span>`;
+        if (!value) {
+            terminal.innerHTML = `<div class="text-red-500">[!] ERROR: Input required.</div>`;
             return;
         }
 
-        // Show Loading
-        terminal.innerHTML = `<span class="text-yellow-500 animate-pulse">[PROCESSING] Querying ${type.toUpperCase()} database...</span>`;
+        terminal.innerHTML = `<div class="text-cyan-400 animate-pulse">[SCANNING] Querying Master DB: ${type.toUpperCase()}...</div>`;
 
-        // API Mapping
-        const API_URLS = {
-            mobile: `https://api.b77bf911.workers.dev/mobile?number=${input}`,
-            aadhaar: `https://api.b77bf911.workers.dev/aadhaar?id=${input}`,
-            vehicle: `https://api.b77bf911.workers.dev/vehicle?registration=${input}`,
-            rashan: `https://api.b77bf911.workers.dev/rashan?aadhaar=${input}`
+        const BASE_URL = "https://api.b77bf911.workers.dev";
+        const endpoints = {
+            mobile: `${BASE_URL}/mobile?number=${value}`,
+            aadhaar: `${BASE_URL}/aadhaar?id=${value}`,
+            gst: `${BASE_URL}/gst?number=${value}`,
+            telegram: `${BASE_URL}/telegram?user=${value}`,
+            ifsc: `${BASE_URL}/ifsc?code=${value}`,
+            rashan: `${BASE_URL}/rashan?aadhaar=${value}`,
+            vehicle: `${BASE_URL}/vehicle?registration=${value}`
         };
 
         try {
-            const response = await fetch(API_URLS[type]);
-            const data = await response.json();
-
-            // Success Output
-            terminal.innerHTML = `<span class="text-green-400">[DATA FOUND] Response from server:</span><br><br>`;
-            
-            // Nice Formatting
-            let formattedData = JSON.stringify(data, null, 4);
-            terminal.innerHTML += `<pre class="text-white">${formattedData}</pre>`;
-        } catch (error) {
-            terminal.innerHTML = `<span class="text-red-500">[FAILED] Error connecting to API server. Check if API is active.</span>`;
+            const res = await fetch(endpoints[type]);
+            const data = await res.json();
+            terminal.innerHTML = `<div class="text-green-400 mb-2">[SUCCESS] Record Extracted:</div>`;
+            terminal.innerHTML += `<pre class="text-white bg-black/40 p-2 rounded">${JSON.stringify(data, null, 4)}</pre>`;
+        } catch (err) {
+            terminal.innerHTML = `<div class="text-red-500">[FAILURE] Connection timed out or API offline.</div>`;
         }
-        terminal.scrollTop = 0; // Auto scroll to top to see data
     }
 </script>
 
 </body>
-</html>
+    </html>
+    
